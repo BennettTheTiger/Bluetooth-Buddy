@@ -54,8 +54,8 @@ class ViewController: UIViewController, CBCentralManagerDelegate, CBPeripheralDe
                 print("Characteristic ID " + char.uuid.uuidString)
                 if(char.uuid == characteristic){
                     print("Sending data")
-                    //peripheral.writeValue(Data.init(bytes: [01]), for: char, type: .withoutResponse)
-                    CBATTRequest
+                    let msg = "0"
+                    peripheral.writeValue(Data.init(_: Array(msg.utf8)), for: char, type: .withoutResponse)
 
                 }
             }
