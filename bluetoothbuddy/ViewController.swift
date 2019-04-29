@@ -16,6 +16,7 @@ class ViewController: UIViewController, CBCentralManagerDelegate, CBPeripheralDe
     //Bluetooth Refs
     var centralManager : CBCentralManager!
     var iotDevice : CBPeripheral?
+    var chatChannel : CBCharacteristic?
     
     //App State
     var locked = true
@@ -53,10 +54,11 @@ class ViewController: UIViewController, CBCentralManagerDelegate, CBPeripheralDe
             for char in chars {
                 print("Characteristic ID " + char.uuid.uuidString)
                 if(char.uuid == characteristic){
+                    chatChannel = char //keep track of this characteristic
                     print("Sending data")
                     let msg = "0"
                     peripheral.writeValue(Data.init(_: Array(msg.utf8)), for: char, type: .withoutResponse)
-
+                    peripheral.setNotifyValue(true, for: char)//listen for data here
                 }
             }
         }
@@ -75,6 +77,31 @@ class ViewController: UIViewController, CBCentralManagerDelegate, CBPeripheralDe
         }
     }
     
+    //fired on serial characteristic changes or 'Arduino Serial.writes()'
+    func peripheral(_ peripheral: CBPeripheral, didUpdateValueFor characteristic: CBCharacteristic, error: Error?) {
+        if(error != nil){
+            print(error?.localizedDescription as Any)
+            return
+        }
+        //print("Periferals characteristics value changed \(characteristic.description)")
+        print(String(bytes: characteristic.value!, encoding: .utf8) as Any)
+        
+        let data = String(decoding: characteristic.value!, as: UTF8.self).components(separatedBy: ":")
+    
+        switch data[0]{
+        case "200":
+            print(data[1])
+            statusText.text = data[1]
+            toggleButton.setTitle(data[1] == "Locked" ? "Unlock" : "Lock", for: .normal)
+        case "250":
+            print("User: " + data[1])
+            //statusText.text = data[1]
+        default:
+            print("Unknown Data Code")
+        }
+        
+    }
+    
     //if you loose a device search for one
     func centralManager(_ central: CBCentralManager, didDisconnectPeripheral peripheral: CBPeripheral, error: Error?) {
         central.scanForPeripherals(withServices: nil, options: nil)
@@ -89,13 +116,15 @@ class ViewController: UIViewController, CBCentralManagerDelegate, CBPeripheralDe
         toggleButton.layer.cornerRadius = 10
         toggleButton.widthAnchor.constraint(equalToConstant: 200).isActive = true
         
-        
         centralManager = CBCentralManager.init(delegate: self, queue: nil)
     }
     
     @IBAction func clickedUnlock(_ sender: UIButton) {
-        locked = !locked
-        updateState()
+        if let target = chatChannel{
+            if let inputText = userInput.text{
+                iotDevice?.writeValue(Data.init(_: Array(inputText.utf8)), for: target, type: .withoutResponse)
+            }
+        }
     }
     
     func updateState(){
