@@ -19,11 +19,19 @@ class ViewController: UIViewController, CBCentralManagerDelegate, CBPeripheralDe
     var chatChannel : CBCharacteristic?
     
     //App State
-    var locked = true
+    var locked = true {
+        didSet{
+            if(locked){
+                welcomeText.text = "" //if the state changes to locked use an observer to clear the txt
+            }
+        }
+    }
+
     
     @IBOutlet weak var statusText: UILabel!
     @IBOutlet weak var userInput: UITextField!
     @IBOutlet weak var toggleButton: UIButton!
+    @IBOutlet weak var welcomeText: UILabel!
     
     //Mark CBManager
     func centralManagerDidUpdateState(_ central: CBCentralManager) {
@@ -93,8 +101,10 @@ class ViewController: UIViewController, CBCentralManagerDelegate, CBPeripheralDe
             print(data[1])
             statusText.text = data[1]
             toggleButton.setTitle(data[1] == "Locked" ? "Unlock" : "Lock", for: .normal)
+            locked = data[1] == "Locked" ? true : false
         case "250":
             print("User: " + data[1])
+            welcomeText.text = "Welcome: \(data[1])"
             //statusText.text = data[1]
         default:
             print("Unknown Data Code")
@@ -121,6 +131,11 @@ class ViewController: UIViewController, CBCentralManagerDelegate, CBPeripheralDe
     
     @IBAction func clickedUnlock(_ sender: UIButton) {
         if let target = chatChannel{
+            if(!locked){
+                let msg = "lockpls"
+                iotDevice?.writeValue(Data.init(_: Array(msg.utf8)), for: target, type: .withoutResponse)
+                return
+            }
             if let inputText = userInput.text{
                 iotDevice?.writeValue(Data.init(_: Array(inputText.utf8)), for: target, type: .withoutResponse)
             }

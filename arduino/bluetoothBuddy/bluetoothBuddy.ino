@@ -24,6 +24,11 @@ void loop() {
   if(Serial.available() > 0)  
   {
     String inputCode = Serial.readString();
+    if(inputCode == "lockpls"){
+      locked = true;
+      shareStatus();
+      return;
+    }
     for(int x=0; x<sizeof(codes); x++){
         if (codes[x] == inputCode){
           //Serial.println("Unlocked");
