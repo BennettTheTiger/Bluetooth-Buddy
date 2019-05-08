@@ -106,6 +106,13 @@ class ViewController: UIViewController, CBCentralManagerDelegate, CBPeripheralDe
             print("User: " + data[1])
             welcomeText.text = "Welcome: \(data[1])"
             //statusText.text = data[1]
+        case "300":
+            print("Active user?")
+            if(!locked){
+                if (chatChannel != nil) {
+                iotDevice?.writeValue(Data.init(_: Array("active".utf8)), for: chatChannel!, type: .withoutResponse)
+                }
+            }
         default:
             print("Unknown Data Code")
         }

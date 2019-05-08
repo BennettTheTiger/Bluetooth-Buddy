@@ -5,7 +5,7 @@
 
 auto timer = timer_create_default();
 
-char Incoming_value = "";                //Variable for storing Incoming_value
+char Incoming_value = "";
 bool locked = false;
 bool readyToLock = false; 
 
@@ -15,9 +15,16 @@ String names[] = {"Bennett", "Nicole","Michelle"};
 void setup() {
   Serial.begin(9600);//This is the rate the bluetooth module 'talks' at.
   pinMode(2, OUTPUT);
-  timer.every(30000, checkOnUser);
+  timer.every(15000, checkOnUser);//timeout duration before auto locking
+  delay(500);//offset these clocks so the serial strings dont get sent together
   timer.every(10000, shareStatus);
   shareStatus();
+  //awake sound
+  tone(A5, 523.25);
+  delay(200);
+  tone(A5, 659.25);
+  delay(200);
+  tone(A5, 783.99, 200);
 }
 
 void loop() {
@@ -27,6 +34,11 @@ void loop() {
     if(inputCode == "lockpls"){
       locked = true;
       shareStatus();
+      chimeOff();
+      return;
+    }
+    if(inputCode == "active"){
+      readyToLock = false;
       return;
     }
     for(int x=0; x<sizeof(codes); x++){
@@ -38,9 +50,11 @@ void loop() {
           Serial.print(msg);
           delay(50);
           shareStatus();
+          chimeOn();
           return;
         }
       }
+      chimeError();
   }
 
   if(locked){
@@ -59,7 +73,7 @@ void checkOnUser(){
   //Serial.println("checking on user");
   if(!locked){
     readyToLock = true;
-    //Serial.println("Ready to lock");
+    Serial.print("300:Ready to Lock");//code that says 'hey im gonna lock' up and client should respond with active or else lock up!
     timer.in(5000,shouldLock);
   }
 }
@@ -76,5 +90,26 @@ void shouldLock(){
     //Serial.println("Locked");
     locked = true;
     shareStatus();
+    chimeOff();
   }
+}
+
+void chimeOn(){
+    tone(A5, 523.25);
+    delay(200);
+    tone(A5, 783.99, 200);
+}
+
+void chimeOff(){
+    tone(A5, 783.99);
+    delay(200);
+    tone(A5, 523.25, 200);
+}
+
+void chimeError(){
+  tone(A5, 659.25,100);
+  delay(200);
+  tone(A5, 659.25,100);
+  delay(200);
+  tone(A5, 659.25, 100);
 }
