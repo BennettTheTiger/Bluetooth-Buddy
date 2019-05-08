@@ -6,7 +6,7 @@
 auto timer = timer_create_default();
 
 char Incoming_value = "";
-bool locked = false;
+bool locked = true;
 bool readyToLock = false; 
 
 String codes[] = {"1234","2468","3100"};
